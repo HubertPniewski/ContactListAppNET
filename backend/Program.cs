@@ -1,11 +1,16 @@
+using Microsoft.EntityFrameworkCore;
+using ContactListApp.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// DB context
+builder.Services.AddDbContext<ContactsContext>(opt => opt.UseInMemoryDatabase("ContactsList"));
 
 var app = builder.Build();
 
