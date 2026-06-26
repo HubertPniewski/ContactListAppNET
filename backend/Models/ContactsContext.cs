@@ -6,6 +6,8 @@ namespace ContactListApp.Models
     {
         public ContactsContext(DbContextOptions<ContactsContext> options) : base(options) {}
 
+        public DbSet<User> Users { get; set; }
+
         public DbSet<ContactItem> ContactItems { get; set; } = null!;
         public DbSet<ContactCategory> ContactCategories { get; set; } = null!;
         public DbSet<ContactSubcategory> ContactSubcategories { get; set; } = null!;

@@ -29,6 +29,10 @@ namespace ContactListApp.Models
         public int? SubcategoryId {  get; set; }
         public ContactSubcategory? Subcategory { get; set; }
         [MaxLength(100)]
-        public string? CustomSubcategory { get; set; }   
+        public string? CustomSubcategory { get; set; }
+
+        // User owning the contact
+        public int UserId { get; set; }
+        public User? User { get; set; }
     }
 }
