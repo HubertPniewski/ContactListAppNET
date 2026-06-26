@@ -16,7 +16,20 @@ namespace ContactListApp.Controllers
             _context = context;
         }
 
-        // GetContactItem - get specific ContactItem by Id
+        // Get a list of all contacts 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ContactsListItemDTO>>> GetContacts()
+        {
+            // take all contats and convert to ContactsListItemDTOs
+            var contacts = await _context.ContactItems
+                .Select(c => new ContactsListItemDTO(c.Id, c.FirstName, c.LastName, c.CategoryId))
+                .ToListAsync();
+
+            // return list of contats and Http 200 response code
+            return Ok(contacts);
+        }
+
+        // GetContactItem - get specific contact with details by Id
         [HttpGet("{id}")]
         public async Task<ActionResult<ContactDetailsDTO>> GetContactItem(long id)
         {
@@ -76,8 +89,56 @@ namespace ContactListApp.Controllers
             _context.ContactItems.Add(newContact);
             await _context.SaveChangesAsync();
 
-            // return HTTP 201 status code and add the location header to the response
+            // return HTTP 201 status code and the contact
             return CreatedAtAction(nameof(GetContactItem), new { id = newContact.Id }, newContact);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult> PutContactItem(long id, PutContactDTO item)
+        {
+            // ensure the id from URL is equal to the Id from DTO
+            if (id != item.Id) return BadRequest("ID mismatch.");
+
+            // try to get the contact and check if the contact already exists 
+            var contact = await _context.ContactItems.FindAsync(item.Id);
+            if (contact == null) return BadRequest("This user doesn't exist.");
+
+            // verify if the email is unique 
+            var emailExists = await _context.ContactItems.AnyAsync(x => x.Email == item.Email && x.Id != item.Id);
+            if (emailExists) return BadRequest("User with this email already exists.");
+
+            // update the contact entity object (ContactItem)
+            contact.FirstName = item.FirstName;
+            contact.LastName = item.LastName;
+            contact.Email = item.Email;
+            contact.PhoneNumber = item.Phone;
+            contact.CategoryId = item.CategoryId;
+            contact.SubcategoryId = item.SubcategoryId;
+            contact.BirthDate = item.BirthDate;
+            contact.CustomSubcategory = item.CustomSubcategory;
+           
+
+            // save changes in the db
+            await _context.SaveChangesAsync();
+
+            // return HTTP 204 status code (NoContent)
+            return NoContent();
+        }
+
+        // Delete specific contact by Id
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteContact(long id)
+        {
+            // find contact
+            var contact = await _context.ContactItems.FirstOrDefaultAsync(x => x.Id == id);
+            if (contact == null) return NotFound(); // if not found, return NotFound
+
+            // remove contact from db
+            _context.ContactItems.Remove(contact);
+            await _context.SaveChangesAsync();
+
+            // return response code
+            return NoContent();
         }
     }
 }
