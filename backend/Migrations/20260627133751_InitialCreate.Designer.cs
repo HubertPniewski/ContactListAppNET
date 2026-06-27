@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ContactListApp.Migrations
 {
     [DbContext(typeof(ContactsContext))]
-    [Migration("20260625142608_InitialCreate")]
+    [Migration("20260627133751_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -41,6 +41,23 @@ namespace ContactListApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ContactCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "służbowy"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "prywatny"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "inny"
+                        });
                 });
 
             modelBuilder.Entity("ContactListApp.Models.ContactItem", b =>
@@ -88,6 +105,9 @@ namespace ContactListApp.Migrations
                     b.Property<int?>("SubcategoryId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
@@ -96,6 +116,8 @@ namespace ContactListApp.Migrations
                         .IsUnique();
 
                     b.HasIndex("SubcategoryId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("ContactItems");
                 });
@@ -121,6 +143,53 @@ namespace ContactListApp.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("ContactSubcategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CategoryId = 1,
+                            Name = "szef"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CategoryId = 1,
+                            Name = "klient"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CategoryId = 1,
+                            Name = "pracownik działu IT"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CategoryId = 1,
+                            Name = "księgowy/a"
+                        });
+                });
+
+            modelBuilder.Entity("ContactListApp.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("ContactListApp.Models.ContactItem", b =>
@@ -135,9 +204,17 @@ namespace ContactListApp.Migrations
                         .WithMany()
                         .HasForeignKey("SubcategoryId");
 
+                    b.HasOne("ContactListApp.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Category");
 
                     b.Navigation("Subcategory");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ContactListApp.Models.ContactSubcategory", b =>

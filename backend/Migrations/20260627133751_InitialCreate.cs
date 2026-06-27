@@ -4,6 +4,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace ContactListApp.Migrations
 {
     /// <inheritdoc />
@@ -23,6 +25,20 @@ namespace ContactListApp.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_ContactCategories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Email = table.Column<string>(type: "text", nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -59,7 +75,8 @@ namespace ContactListApp.Migrations
                     PasswordHash = table.Column<string>(type: "text", nullable: false),
                     CategoryId = table.Column<int>(type: "integer", nullable: false),
                     SubcategoryId = table.Column<int>(type: "integer", nullable: true),
-                    CustomSubcategory = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true)
+                    CustomSubcategory = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
+                    UserId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -75,6 +92,33 @@ namespace ContactListApp.Migrations
                         column: x => x.SubcategoryId,
                         principalTable: "ContactSubcategories",
                         principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_ContactItems_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "ContactCategories",
+                columns: new[] { "Id", "Name" },
+                values: new object[,]
+                {
+                    { 1, "służbowy" },
+                    { 2, "prywatny" },
+                    { 3, "inny" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "ContactSubcategories",
+                columns: new[] { "Id", "CategoryId", "Name" },
+                values: new object[,]
+                {
+                    { 1, 1, "szef" },
+                    { 2, 1, "klient" },
+                    { 3, 1, "pracownik działu IT" },
+                    { 4, 1, "księgowy/a" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -94,6 +138,11 @@ namespace ContactListApp.Migrations
                 column: "SubcategoryId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_ContactItems_UserId",
+                table: "ContactItems",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ContactSubcategories_CategoryId",
                 table: "ContactSubcategories",
                 column: "CategoryId");
@@ -107,6 +156,9 @@ namespace ContactListApp.Migrations
 
             migrationBuilder.DropTable(
                 name: "ContactSubcategories");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "ContactCategories");
