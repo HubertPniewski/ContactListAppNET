@@ -22,7 +22,7 @@ namespace ContactListApp.Controllers
 
         // Register a new user
         [HttpPost("register")]
-        public async Task<ActionResult> Register(AuthDTO dto)
+        public async Task<ActionResult> Register(RegisterDTO dto)
         {
             // ensure there's no user with given email
             var userExists = await _context.Users.AnyAsync(x => x.Email == dto.Email);
@@ -45,7 +45,7 @@ namespace ContactListApp.Controllers
 
         // Login
         [HttpPost("login")]
-        public async Task<ActionResult> Login(AuthDTO dto)
+        public async Task<ActionResult> Login(LoginDTO dto)
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
 
@@ -58,6 +58,15 @@ namespace ContactListApp.Controllers
 
             // return JWT token
             return Ok(new { token, email = user.Email });
+        }
+
+        // Logout (W.I.P.)
+        [HttpPost("logout")]
+        public async Task<ActionResult> Logout()
+        {
+            // WARNING! This is only a template, not fully functional yet
+            // TODO: proper black list of not valid tokens 
+            return Ok(new { message = "Logged out successfully (clear token on frontend)." });
         }
     }
 }
