@@ -1,5 +1,6 @@
 using ContactListApp.DTOs;
 using ContactListApp.Models;
+using ContactListApp.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,10 +12,12 @@ namespace ContactListApp.Controllers
     public class AuthController : ControllerBase
     {
         private readonly ContactsContext _context;
+        private readonly IJwtService _jwtService;
 
-        public AuthController(ContactsContext context)
+        public AuthController(ContactsContext context, IJwtService jwtService)
         {
             _context = context;
+            _jwtService = jwtService;
         }
 
         // Register a new user
@@ -46,15 +49,15 @@ namespace ContactListApp.Controllers
         {
             var user = await _context.Users.FirstOrDefaultAsync(x => x.Email == dto.Email);
 
-            // ensure the user with given email exist
-            if (user == null) return Unauthorized("Invalid email or password.");
+            // ensure the user with given email exist and the password is valid
+            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash)) 
+                return Unauthorized("Invalid email or password.");
 
-            // password verification
-            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
-            if (!isPasswordCorrect) return Unauthorized("Invalid email or password.");
+            // generating JWT token
+            var token = _jwtService.GenerateToken(user);
 
-            // TODO: return JWT token
-            return Ok(new { message = "Login successfull." });
+            // return JWT token
+            return Ok(new { token, email = user.Email });
         }
     }
 }

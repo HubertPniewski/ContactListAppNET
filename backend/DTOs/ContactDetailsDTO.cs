@@ -13,5 +13,6 @@ namespace ContactListApp.DTOs
         public int? SubcategoryId { get; set; }
         public string? CustomSubcategory { get; set; }
         public DateOnly BirthDate { get; set; }
+        public int UserId { get; set; }
     }
 }

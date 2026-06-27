@@ -2,6 +2,10 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using ContactListApp.Models;
 using dotenv.net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using ContactListApp.Services;
 
 
 // Load environment variables from .env file
@@ -18,9 +22,37 @@ builder.Services.AddSwaggerGen();
 // Database configuration
 var connectionString = builder.Configuration.GetConnectionString("PostgresConnection"); // get connection string from appsettings.Development.json
 var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD"); // get the password to db from .env
+
 if (!connectionString.EndsWith(";")) connectionString += ";";
 connectionString += $"Password={dbPassword};"; // add the password to the connectionString
+
 builder.Services.AddDbContext<ContactsContext>(opt => opt.UseNpgsql(connectionString)); // DB context
+
+// JWT configuration
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    // Get JwtSettings from appsettings.json
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+    var secretKey = jwtSettings["Secret"]; // get secret key from JwtSettings
+
+    // set parameters for JWT
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, 
+        ValidateAudience = false, // false only for development purposes, set true for production
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!)) // secret key from appsettings.json
+    };
+});
 
 var app = builder.Build();
 
@@ -33,6 +65,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRouting();
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
