@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista Kontaktów</title>
+  <link href="bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+  <nav class="navbar navbar-dark bg-dark mb-4">
+    <div class="container">
+      <a class="navbar-brand" href="#">ContactsApp</a>
+      <div class="d-flex align-items-center text-white">
+        <div id="anon-zone">
+          <button class="btn btn-outline-light btn-sm me-2" data-bs-toggle="modal"
+            data-bs-target="#loginModal">Zaloguj</button>
+          <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+            data-bs-target="#registerModal">Zarejestruj</button>
+        </div>
+        <div id="user-zone" class="d-none">
+          <span id="user-email-display" class="me-3 text-secondary"></span>
+          <button class="btn btn-danger btn-sm" id="btn-logout">Wyloguj</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="row">
+
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Kontakty</h5>
+            <button class="btn btn-light btn-sm d-none" id="btn-add-contact-mode">+ Dodaj</button>
+          </div>
+          <div class="list-group list-group-flush" id="contacts-list" style="max-height: 500px; overflow-y: auto;">
+            <div class="text-center p-3 text-muted">Ładowanie kontaktów...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="card shadow-sm d-none" id="details-card">
+          <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0" id="details-header">Szczegóły kontaktu</h5>
+          </div>
+          <div class="card-body">
+            <form id="contact-form">
+              <input type="hidden" id="contact-id">
+              <div class="row g-3">
+                <div class="col-6">
+                  <label class="form-label">Imię</label>
+                  <input type="text" class="form-control" id="c-firstname" required disabled>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Nazwisko</label>
+                  <input type="text" class="form-control" id="c-lastname" required disabled>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="form-control" id="c-email" required disabled>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Telefon</label>
+                  <input type="text" class="form-control" id="c-phone" disabled>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Kategoria</label>
+                  <select class="form-select" id="c-category" disabled>
+                    <option value="1">Służbowy</option>
+                    <option value="2">Prywatny</option>
+                    <option value="3">Inny</option>
+                  </select>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Data urodzenia</label>
+                  <input type="date" class="form-control" id="c-birthdate" disabled>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-3 border-top d-none" id="contact-actions">
+                <button type="button" class="btn btn-success me-2" id="btn-save-contact">Zapisz
+                  zmiany</button>
+                <button type="button" class="btn btn-danger" id="btn-delete-contact">Usuń
+                  kontakt</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="alert alert-info text-center" id="no-selection-alert">
+          Wybierz kontakt z listy, aby zobaczyć szczegóły.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Logowanie</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="login-form">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="login-email" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Hasło</label>
+              <input type="password" class="form-control" id="login-password" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary w-100">Zaloguj się</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Rejestracja</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="register-form">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="register-email" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Hasło</label>
+              <input type="password" class="form-control" id="register-password" required>
+              <div class="form-text text-muted" style="font-size: 0.75rem;">Min. 8 znaków, wielka i mała
+                litera, cyfra,
+                znak specjalny.</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success w-100">Zarejestruj się</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="bootstrap.bundle.min.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>

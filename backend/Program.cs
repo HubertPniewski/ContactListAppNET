@@ -54,6 +54,15 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Cross Origin configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy => // allow all only for development and testing purposes, not for production!
+    {
+        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -66,7 +75,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseRouting();
-
+app.UseCors("AllowAll"); // allow requests from any orgin, only for development and testing!
 app.UseAuthentication();
 app.UseAuthorization();
 
