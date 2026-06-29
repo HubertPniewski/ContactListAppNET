@@ -49,7 +49,7 @@ While the core backend API is fully operational and secured, the frontend serves
 
 ### Prerequisites
 * .NET 8 SDK
-* Running PostgreSQL instance (e.g., via the configured Docker container)
+* Running PostgreSQL instance (e.g., via the configured Docker container: `docker compose up -d` in the main repository folder)
 
 ### 1. Backend Compilation and Launch
 You can compile and run the API using an IDE (Visual Studio / Rider), or via the .NET Core CLI.
@@ -58,7 +58,7 @@ Instruction for CLI:
 
 **1. Navigate to the backend directory:**
 ```bash
-cd ContactListApp/backend
+cd backend
 ```
 
 **2. Restore dependencies and compile the application:**
