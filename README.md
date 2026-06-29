@@ -49,10 +49,25 @@ While the core backend API is fully operational and secured, the frontend serves
 
 ### Prerequisites
 * .NET 8 SDK
-* Running PostgreSQL instance (e.g., via the configured Docker container: `docker compose up -d` in the main repository folder)
+* Docker
+* Visual Studio / Rider
 
-### 1. Backend Compilation and Launch
+### 1. Initial setup and database
+**1. Create .env file inside the main repository folder with following pattern:**
+```env
+DB_USER=postgres
+DB_PASSWORD=<TYPE PASSWORD HERE>
+DB_NAME=ContactsDb
+```
+
+**2. Launch Docker container instance for the database:**
+```bash
+docker compose up
+```
+
+### 2. Backend Compilation and Launch
 You can compile and run the API using an IDE (Visual Studio / Rider), or via the .NET Core CLI.
+**NOTE:** CLI is not recommended, because it might not work for not yet known reason. An IDE should be a better option.
 
 Instruction for CLI:
 
@@ -73,7 +88,7 @@ dotnet run
 
 The API will start and listen at **https://localhost:7035**
 
-### 2. Frontend Launch
+### 3. Frontend Launch
 Open frontend/index.html file in a browser.
 
 
