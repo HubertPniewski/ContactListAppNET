@@ -13,6 +13,33 @@ function getUserEmail() {
     return localStorage.getItem("user_email");
 }
 
+// helper JWT functions
+// decode JWT token
+function getJwtPayload() {
+    const token = getToken();
+    if (!token) return null;
+
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+
+        const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        console.error("Token decoding error: ", e);
+        return null;
+    }
+}
+
+// get logged in user's Id
+function getUserId() {
+    const payload = getJwtPayload();
+    return payload ? payload.nameid : null;
+}
+
 // updating the look of the Navbar
 function updateNavbar() {
     // get JWT token
@@ -44,6 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateNavbar();
     initStaticCategories();
     loadContacts();
+    initAddContactMode();
 });
 
 
@@ -179,7 +207,7 @@ async function loadContacts() {
             `;
 
             // add listener to call function showing details after the contact is clicked
-            item.addEventListener("click", () => showContactDetails(contact));
+            item.addEventListener("click", () => showContactDetails(contact.id));
 
             // add the contact to the contacts list container
             listContainer.appendChild(item);
@@ -198,9 +226,9 @@ const globalCategories = [
 ];
 
 const globalSubCategories = [
-    { id: 101, categoryId: 1, name: "Szef" },
-    { id: 102, categoryId: 1, name: "Klient" },
-    { id: 103, categoryId: 1, name: "Pracownik" }
+    { id: 1, categoryId: 1, name: "Szef" },
+    { id: 2, categoryId: 1, name: "Klient" },
+    { id: 3, categoryId: 1, name: "Pracownik" }
 ];
 
 function initStaticCategories() {
@@ -251,7 +279,7 @@ function updateSubcategorySelect(categoryId, selectedSubCategoryId = null) {
 
 
 // Displaying contact details
-function showContactDetails(contact) {
+async function showContactDetails(contactId) {
     document.getElementById("no-selection-alert").classList.add("d-none");
     const detailsCard = document.getElementById("details-card");
     detailsCard.classList.remove("d-none");
@@ -260,35 +288,48 @@ function showContactDetails(contact) {
         document.getElementById("btn-delete-contact").classList.remove("d-none");
     }
 
-    document.getElementById("contact-id").value = contact.id;
-    document.getElementById("c-firstname").value = contact.firstName;
-    document.getElementById("c-lastname").value = contact.lastName;
-    document.getElementById("c-email").value = contact.email;
-    document.getElementById("c-phone").value = contact.phoneNumber || "";
-    document.getElementById("c-category").value = contact.categoryId;
+    try {
+        // get contact details from backend
+        const response = await fetch(`${API_URL}/contacts/${contactId}`);
+        if (!response.ok) throw new Error("Nie udało się pobrać szczegółów kontaktu z bazy.");
 
-    updateSubcategorySelect(contact.categoryId, contact.subCategoryId);
+        const contact = await response.json();
 
-    if (contact.birthDate) {
-        document.getElementById("c-birthdate").value = contact.birthDate.split("T")[0];
-    } else {
-        document.getElementById("c-birthdate").value = "";
-    }
+        document.getElementById("contact-id").value = contact.id;
+        document.getElementById("c-firstname").value = contact.firstName;
+        document.getElementById("c-lastname").value = contact.lastName;
+        document.getElementById("c-email").value = contact.email;
+        document.getElementById("c-phone").value = contact.phone || "";
+        document.getElementById("c-category").value = contact.categoryId;
 
-    const loggedInEmail = getUserEmail();
-    const actionsSection = document.getElementById("contact-actions");
-    const inputs = document.querySelectorAll("#contact-form input, #contact-form select");
+        updateSubcategorySelect(contact.categoryId, contact.subcategoryId);
 
-    if (loggedInEmail && contact.userEmail === loggedInEmail) {
-        document.getElementById("details-header").textContent = "Szczegóły twojego kontaktu (możliwa edycja)";
-        if (actionsSection) actionsSection.classList.remove("d-none");
-        inputs.forEach(input => {
-            if (input.id !== "contact-id") input.removeAttribute("disabled");
-        });
-    } else {
-        document.getElementById("details-header").textContent = "Szczegóły kontaktu";
-        if (actionsSection) actionsSection.classList.add("d-none");
-        inputs.forEach(input => input.setAttribute("disabled", "true"));
+        if (contact.birthDate) {
+            document.getElementById("c-birthdate").value = contact.birthDate.split("T")[0];
+        } else {
+            document.getElementById("c-birthdate").value = "";
+        }
+
+
+        // adjust view based on user's ownership of the contact
+        const loggedInUserId = getUserId();
+        const actionsSection = document.getElementById("contact-actions");
+        const inputs = document.querySelectorAll("#details-card input, #details-card select");
+
+        if (loggedInUserId && contact.userId == loggedInUserId) {
+            document.getElementById("details-header").textContent = "Szczegóły twojego kontaktu (możliwa edycja)";
+            if (actionsSection) actionsSection.classList.remove("d-none");
+            inputs.forEach(input => {
+                if (input.id !== "contact-id") input.removeAttribute("disabled");
+            });
+        } else {
+            document.getElementById("details-header").textContent = "Szczegóły kontaktu";
+            if (actionsSection) actionsSection.classList.add("d-none");
+            inputs.forEach(input => input.setAttribute("disabled", "true"));
+        }
+
+    } catch (err) {
+        alert(`Błąd: ${err.message}`);
     }
 }
 
@@ -298,20 +339,19 @@ function initAddContactMode() {
     if (!addBtn) return;
 
     addBtn.addEventListener("click", () => {
-        // Open right side panel
-        document.getElementById("no-selection-alert").classList.add("d-none");
+        const noSelectionAlert = document.getElementById("no-selection-alert");
         const detailsCard = document.getElementById("details-card");
-        detailsCard.classList.remove("d-none");
 
-        // Enable contact adding mode
+        if (noSelectionAlert) noSelectionAlert.classList.add("d-none");
+        if (detailsCard) detailsCard.classList.remove("d-none");
+
         document.getElementById("details-header").textContent = "Dodaj nowy kontakt";
 
-        // Hide delete button
         if (document.getElementById("btn-delete-contact")) {
             document.getElementById("btn-delete-contact").classList.add("d-none");
         }
 
-        // clear the form
+        // clear fields
         document.getElementById("contact-id").value = "";
         document.getElementById("c-firstname").value = "";
         document.getElementById("c-lastname").value = "";
@@ -322,8 +362,8 @@ function initAddContactMode() {
 
         updateSubcategorySelect("");
 
-        // Unlock fields for user
-        const inputs = document.querySelectorAll("#contact-form input, #contact-form select");
+        // Odblokowanie pól
+        const inputs = document.querySelectorAll("#details-card input, #details-card select");
         inputs.forEach(input => {
             if (input.id !== "contact-id") input.removeAttribute("disabled");
         });
@@ -334,28 +374,29 @@ function initAddContactMode() {
 }
 
 // Saving contact (for POST or PUT)
-if (document.getElementById("btn-save-contact")) {
-    document.getElementById("btn-save-contact").addEventListener("click", async () => {
+const saveContactBtn = document.getElementById("btn-save-contact");
+if (saveContactBtn) {
+    saveContactBtn.addEventListener("click", async () => {
         const id = document.getElementById("contact-id").value;
 
-        // Check if it's a new contact or existing one (based on ID)
+        // method PUT is not available at the frontend site due to lack of time
         if (id) {
             alert("Ze względów czasowych, edycja nie jest powiązana z API. Endpoint (PUT /api/contacts/{id}) dostępny w API.");
             return;
         }
 
-        // if id is empty, then add new contact
+        const subCategoryEl = document.getElementById("c-subcategory");
+
         const contactData = {
-            firstName: document.getElementById("c-firstname").value,
-            lastName: document.getElementById("c-lastname").value,
-            email: document.getElementById("c-email").value,
-            phoneNumber: document.getElementById("c-phone").value,
+            firstName: document.getElementById("c-firstname").value.trim(),
+            lastName: document.getElementById("c-lastname").value.trim(),
+            email: document.getElementById("c-email").value.trim(),
+            phone: document.getElementById("c-phone").value.trim(),
             categoryId: parseInt(document.getElementById("c-category").value) || null,
-            subCategoryId: parseInt(document.getElementById("c-subcategory").value) || null,
+            subcategoryId: (subCategoryEl && subCategoryEl.value) ? parseInt(subCategoryEl.value) : null,
             birthDate: document.getElementById("c-birthdate").value || null
         };
 
-        // Validation
         if (!contactData.firstName || !contactData.lastName || !contactData.email) {
             alert("Imię, nazwisko oraz adres e-mail są wymagane!");
             return;
@@ -367,18 +408,19 @@ if (document.getElementById("btn-save-contact")) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}` // attach JWT token
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(contactData)
             });
 
             if (response.ok) {
                 alert("Kontakt został pomyślnie dodany do bazy danych!");
-                loadContacts(); // refresh list of contacts
+                loadContacts();
 
-                // hide form
-                document.getElementById("details-card").classList.add("d-none");
-                document.getElementById("no-selection-alert").classList.remove("d-none");
+                const detailsCard = document.getElementById("details-card");
+                const noSelectionAlert = document.getElementById("no-selection-alert");
+                if (detailsCard) detailsCard.classList.add("d-none");
+                if (noSelectionAlert) noSelectionAlert.classList.remove("d-none");
             } else {
                 const errData = await response.json().catch(() => ({}));
                 alert(`Błąd dodawania kontaktu: ${errData.message || "Brak autoryzacji lub niepoprawne dane."}`);
@@ -394,3 +436,5 @@ if (document.getElementById("btn-delete-contact")) {
         alert("Ze względów czasowych, przycisk nie jest powiązany z API. Endpoint (DELETE /api/contacts/{id}) dostępny do w API.");
     });
 }
+
+
